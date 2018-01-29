@@ -1,0 +1,19 @@
+
+Things I need to do to implement tile-reduce:
+
+	* make a function that given a list of tileids gets the tileids from simple query methods and returns a map of that
+	* figure out a syntax for taking different maps it may no longer be k,v going into the function k,[]v or map[string]
+		* really i think it should be a map but the documentation should specify this
+		* I will have to add a filename to mbtiles struct kind of shitty
+	* how should bounding boxes and areas be handled?
+		* quite a fuckin verbose problem, for each source getting the min and max zoom implementing some sort of tile cover then drilling down to maxzoom i guess kind of fuckin annoying though
+		* tile cover shouldn't take to long to implement really, I guess lets do that first
+
+
+
+Tile Cover, may be (probably its own module):
+	* Plan: keep it simple stupid
+		* generate tiles between bounding boxes starting at 0 
+		* iterating to higher zooms doing a pip on all 4 corners of each tile. the first zoom that has a tile that fits in the area done with inner
+		* iterpolate outer lines I can probably duplicate some of the code from utf8_grid here or a lot of it
+		* hopefully done?
