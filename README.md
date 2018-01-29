@@ -2,15 +2,19 @@
 
 # What is it?
 
-This implementation is still pretty hacky as I haven't done much with the conifiguration YET and it doesn't support multiple sources or anything its suppose to. I've basically spent 90% of the time on this script tracking down race conditions for the collection part, but it works now! However, I'm sure I've done something not in an ideal manner. 
+Often times in geospatial processing we are doing things about a specific tile, and have implemented 100s of go routines methods or bits of codes doing this across many modules, because I thought go type system wouldn't allow for the mapping of functions to each tile gracefully. With a few quirks, this package does this saving hours of work and tons of code in the process. (hopefully)
 
-# How does it work?
+So you can sort of think of this as a job scheduler of some arbitary function return an interface (which can then be cast to its original type down stream in collection or just returned as an empty interface and all i/o is done within the function to another file or something. This allows you to sort of chain these processes together in a beneficial manner as well. 
 
-Currently it has a pretty simple implementation and works a lot like mapbox's node tile-reduce the differences being the goes pretty strongly typed so we have to do a little bit of manipulation to within are mapped function to get it returned as a raw interface{} (which can be anything) from there I let the collection down stream be up to you. You can simply, have no collection at all and return a raw interface and modify files / sqlite stores within the function or do whatever you like this simply handles the mapping step. My functions instead of handling raw features handle raw byte arrays and you handle your sources as such, its a little more freedom but less structure as well. However, to get features at vector tiles you can simply use the mbutil.Convert_Vt_Bytes(bytes,tileid) to get out the features. 
+# Concerns 
 
-# A simple example 
+I'm not fully aware of variable scopes in go it would take me a second to figure it out but I do its possible to float globals into functions depending on either how you define the variable or how you define the function. In other words code may have to be written a certain way to ensure that variables that are needed during processing say another dataset or anything structure can be used without being explicity defined in the function signature. 
 
-The following shows an example of how to collect all the features of a vector tiles at a given zoom with the concurrent processes being set at 1000 and the zoom being set at 12. As you can see there isn't a terrible amount to the implementation however when more sources are added we may have to get a little more complex. 
+Currently this implementation supports one source file however, I have plans for multiple sources the issue is do I try to melt one struct and all these functions to take both one source and multiple or duplicate a lot of code and an entirely new struct for the sources even though much is it entirely the same. 
+
+Currently ALL and ZOOM mapping types ingest every tileid into memory as to account for when we have multiple sources and free us from the task of maintaining the different tiles between sources instead one big tile list. However at size 20 zoom their are billions of tiles, and at some point we'll need to push the tiles out of memory. I was thinking a memory mapped 4,4,1 byte (int32,int32,byte representation of zoom i.e. int8) implementation of encoding the ids to a file and reading each tile along the way or blocks of tiles. It would be just as easy as csv encoding, in fact  a lot more structure. 
+
+For example say were doing 500 processes at once 500 * 9 bytes 4500 bytes read 4500 at starting pos x increment starting pos, jump 9 bytes at a type mapping a simple byte encoding to integers. This will need to be done for sure, I'm just not sure if int32 is large enough. 
 
 ```golang 
 package main
