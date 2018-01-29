@@ -8,10 +8,6 @@ This implementation is still pretty hacky as I haven't done much with the conifi
 
 Currently it has a pretty simple implementation and works a lot like mapbox's node tile-reduce the differences being the goes pretty strongly typed so we have to do a little bit of manipulation to within are mapped function to get it returned as a raw interface{} (which can be anything) from there I let the collection down stream be up to you. You can simply, have no collection at all and return a raw interface and modify files / sqlite stores within the function or do whatever you like this simply handles the mapping step. My functions instead of handling raw features handle raw byte arrays and you handle your sources as such, its a little more freedom but less structure as well. However, to get features at vector tiles you can simply use the mbutil.Convert_Vt_Bytes(bytes,tileid) to get out the features. 
 
-# Caveats 
-
-I've found a few bugs in my Convert_Vt_Bytes function that I need to track down related to features which shouldn't be to hard at all. However, a more pressing issue is supporting multi geometries in Convert_Vt_Bytes() which again shouldn't deviate to much from the normal implmentation but I've never implemented encoding of multi geometries and really I just want to be able to support other people or raw data sets downloaded. Although really it shouldn't be to hard. 
-
 # A simple example 
 
 The following shows an example of how to collect all the features of a vector tiles at a given zoom with the concurrent processes being set at 1000 and the zoom being set at 12. As you can see there isn't a terrible amount to the implementation however when more sources are added we may have to get a little more complex. 
