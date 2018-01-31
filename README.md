@@ -18,15 +18,12 @@ Currently tile-reduce supports 4 (well 5) mapping types being what tiles we actu
 
 These mappings are fairly similiar to mapbox's node tile reduce. Examples of implementing each of these will be shown in examples later. 
 
-# Concerns 
+# Example Usage
 
-I'm not fully aware of variable scopes in go it would take me a second to figure it out but I do its possible to float globals into functions depending on either how you define the variable or how you define the function. In other words code may have to be written a certain way to ensure that variables that are needed during processing say another dataset or anything structure can be used without being explicity defined in the function signature. 
+The example below reads from an americ (maybe north america) mapbox qa tilesets available for download as I figured it would be a good datum. The example not only serializes the vector tile but converts it into geojson features. (a step not really needed but worth showing) the qa tiles function assume gzip compression while the normal function just accepts the raw byte array in other words you would have to reflect the ungzip in your own mapfunc. 
 
-Currently this implementation supports one source file however, I have plans for multiple sources the issue is do I try to melt one struct and all these functions to take both one source and multiple or duplicate a lot of code and an entirely new struct for the sources even though much is it entirely the same. 
+The example was a ~5gb gzipped mbtiles file consisting of ~72M features and it completed the example in around 10 minutes if I remember I'll run again and time it.
 
-Currently ALL and ZOOM mapping types ingest every tileid into memory as to account for when we have multiple sources and free us from the task of maintaining the different tiles between sources instead one big tile list. However at size 20 zoom their are billions of tiles, and at some point we'll need to push the tiles out of memory. I was thinking a memory mapped 4,4,1 byte (int32,int32,byte representation of zoom i.e. int8) implementation of encoding the ids to a file and reading each tile along the way or blocks of tiles. It would be just as easy as csv encoding, in fact  a lot more structure. 
-
-For example say were doing 500 processes at once 500 * 9 bytes 4500 bytes read 4500 at starting pos x increment starting pos, jump 9 bytes at a type mapping a simple byte encoding to integers. This will need to be done for sure, I'm just not sure if int32 is large enough. 
 
 ```golang 
 package main
@@ -84,6 +81,3 @@ func main() {
 
 }
 ```
-
-# Output 
-![](https://user-images.githubusercontent.com/10904982/35489718-693345c8-0467-11e8-893f-cff74a4090c4.png)
