@@ -32,53 +32,56 @@ For example say were doing 500 processes at once 500 * 9 bytes 4500 bytes read 4
 package main
 
 import (
-	"github.com/paulmach/go.geojson"
-	"io/ioutil"
-	"github.com/murphy214/mbtiles-util"
-	m "github.com/murphy214/mercantile"
 	"github.com/murphy214/tile-reduce"
-
+	mbutil "github.com/murphy214/mbtiles-util"
+	m "github.com/murphy214/mercantile"
+	"fmt"
 )
-
-// this function returns all the features within layers in a given vector tile  
-// a geojson feature array 
-func Mapped_Func(k m.TileID,v []byte) interface{} {
-	// gettiing the map of each layer
-	a := mbutil.Convert_Vt_Bytes(v,k)
-	
-	newfeats := []*geojson.Feature{}
-	// iterating through each layer
-	for _,vv := range a {	
-		newfeats = append(newfeats,vv...) // appending the set of features to total list
-	}
-	return tile_reduce.Mask(newfeats) // projecting the feature array to an interface 
-}
 
 
 func main() {
-	// reading a mbtiles context
-	a := mbutil.Read_Mbtiles("delaware.mbtiles")
+	// getting mbtile object (our source)
+	mbtile := mbutil.Read_Mbtiles("america.mbtiles")
 
 	// creating the tile reduce structure that will map a single function
-	tr := tile_reduce.Tile_Reduce_Config{Zoom:12,Source:&a,Processes:1000}
-	
-	// sending the tile_reduce function off to concurrency land
-	go tr.Tile_Reduce(Mapped_Func)
-
-	// code will block here as tiles output are collected as an interface
-	count := 0
-	newfeats := []*geojson.Feature{}
-	for tr.Next(count) {
-		val := <-tr.Channel // collecting value from channel
-		feats := val.Interface // selects the interface as we don't need the tileid
-		newfeats = append(newfeats,feats.([]*geojson.Feature)...) // appending the features after we project its typing
-		count += 1
+	tr := tile_reduce.Tile_Reduce_Config{
+		Source:&mbtile,
+		Processes:1000, // 1000 concurrent processes at time 
+		Type:tile_reduce.All,
 	}
 
-	// writing to file
-	fc := &geojson.FeatureCollection{Features:newfeats}
-	stval,_ := fc.MarshalJSON()
-	ioutil.WriteFile("a.geojson",[]byte(stval),0677)
+	// defining funciton to map
+	mapfunc := func(k m.TileID,bytes []byte) interface{} {
+		// convering into featuers
+		// note this function is specifically used for
+		// mapbox qa tiles because of their geom encoding
+		layermap := mbutil.Convert_Vt_Bytes_QA(bytes,k) 
+
+		// iterating through each layer getting the total features
+		num_feats := 0
+		for _,features := range layermap {
+			num_feats += len(features)
+		}
+		
+		return tile_reduce.Mask(num_feats)
+	}
+	
+	// sending go function into concurrentcy land
+
+	go tr.Tile_Reduce(mapfunc)
+	
+	// code blocks here
+	total_number_features := 0
+	count := 0
+	for tr.Next() {
+		val := <-tr.Channel
+		total_number_features += val.Interface.(int)
+		count += 1
+		fmt.Printf("\r[%d/%d] Tiles Completed",count,tr.TotalCount)
+	}
+
+	fmt.Printf("\n\nTotal Number of Features: %d",total_number_features)
+
 }
 ```
 
