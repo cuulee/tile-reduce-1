@@ -22,7 +22,7 @@ These mappings are fairly similiar to mapbox's node tile reduce. Examples of imp
 
 The example below reads from an americ (maybe north america) mapbox qa tilesets available for download as I figured it would be a good datum. The example not only serializes the vector tile but converts it into geojson features. (a step not really needed but worth showing) the qa tiles function assume gzip compression while the normal function just accepts the raw byte array in other words you would have to reflect the ungzip in your own mapfunc. 
 
-The example was a ~5gb gzipped mbtiles file. On my machine (2012 MBP 15 in.) it completed 7m41.768725755s with 71,339,335 (71 million) thats > 100,000 features read / s from the worst state you can get the vector tiles in gzipped with QA encoding. 
+The example was a ~5gb gzipped mbtiles file. On my machine (2012 MBP 15 in.) it completed 3m5.757978835s with 71,339,335 (71 million) thats > 100,000 features read / s from the worst state you can get the vector tiles in gzipped with QA encoding. 
 
 ```golang 
 package main
@@ -37,15 +37,6 @@ import (
 	"io/ioutil"
 	"github.com/paulmach/go.geojson"
 )
-
-func M(k m.TileID,v []byte) map[string][]*geojson.Feature {
-	return vt.New_Vector_Tile(v).ToGeoJSON(k)
-}
-
-
-func consume(k m.TileID) {
-
-}
 
 func main() {
 	// getting mbtile object (our source)
@@ -108,4 +99,6 @@ func main() {
 	fmt.Printf("\n\nTotal Number of Features: %d in %s time.",total_number_features,time.Now().Sub(s))
 
 }
+
+// Total Number of Features: 70892240 in 3m5.757978835s 
 ```
